@@ -1,0 +1,4 @@
+# requirements.txt
+
+bcrypt==4.2.0
+#APi calling for the backend to communicate with the frontend
