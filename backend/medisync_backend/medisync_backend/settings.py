@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-qc*2thhf$u1=5mtdcb@%v^33a95@mz0w9h$w^s93rmtv_n*i$d
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["http://localhost:8081"]
+ALLOWED_HOSTS = ["http://localhost:8081"] # Medisync frontend URL for webpack Dev Server
 
 
 # Application definition
@@ -39,12 +39,17 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "frontend",
+    "corsheaders",
+    "rest_framework_simplejwt",
 ]
+
+CORS_ORIGIN_ALLOW_ALL = True # Allow all origins for CORS requests
+CORS_ALLOW_CREDENTIALS = True # Allow cookies to be sent with CORS requests
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -139,8 +144,21 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
 }
 
-JWT_AUTH = {
-    #validity of the token in days
-    "JWT_EXPIRATION_DELTA": datetime.timedelta(days=3),
+SIMPLE_JWT = {
+    
+    "JWT_EXPIRATION_DELTA": datetime.timedelta(days=3), # how long the token is valid
     "JWT_ALLOW_REFRESH": True,
+    "UPDATE_LAST_LOGIN": True,
+    "JWT_REFRESH_EXPIRATION_DELTA": datetime.timedelta(days=7), # how long the refresh token is valid
+    
+    
+    "ALLGORITHM": "HS256", # the algorithm used to encode the token
+    "SIGNING_KEY": SECRET_KEY, # the key used to sign the token
+    "AUTH_HEADER_TYPES": ("Bearer",), # the type of header used to send the token
+    "AUTH_HEADER_PREFIX": "Bearer", # the prefix used in the header
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",), # the type of token used
+    "TOKEN_TYPE_CLAIM": "token_type", # the claim used to identify the token type
+    "USER_ID_FIELD": "id", # the field used to identify the user
+    "USER_ID_CLAIM": "user_id", # the claim used to identify the user
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",), # the type of token used
 }
