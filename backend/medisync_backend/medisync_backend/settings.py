@@ -41,6 +41,11 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "rest_framework_simplejwt",
+    "users",  # Custom app for user management
+    "medisync_backend",  # Main app for the backend
+    "crispy_forms",  # For crispy forms
+    "crispy_tailwind",  # For crispy forms with Tailwind CSS
+    
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True # Allow all origins for CORS requests
@@ -162,3 +167,10 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "user_id", # the claim used to identify the user
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",), # the type of token used
 }
+
+#specific styling for crispy forms
+CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
+CRISPY_TEMPLATE_PACK = "tailwind"
+
+#custom user model
+AUTH_USER_MODEL = "users.UserProfile"
