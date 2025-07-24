@@ -33,7 +33,7 @@ class UserProfile(AbstractUser):
     address = models.TextField(blank=True, null=True, verbose_name=_('Address'))
     
     #users verification fields
-    verification_document = models.FileField(upload_to='verification_documents/', blank=True, null=True, verbose_name=_('Verification Document'), validators=[validate_user_document()])
+    verification_document = models.FileField(upload_to='verification_documents/', blank=True, null=True, verbose_name=_('Verification Document'))
     verification_status = models.CharField(max_length=20, choices=[('pending', _('Pending')), ('approved', _('Approved')), ('rejected', _('Rejected'))], default='pending', verbose_name=_('Verification Status'))
     is_verified = models.BooleanField(default=False, verbose_name=_('Is Verified'))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Created At'))
@@ -58,4 +58,3 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
     """
     if created:
         Token.objects.create(user=instance)
-  
