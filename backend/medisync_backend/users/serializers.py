@@ -95,7 +95,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             """
             Validate the user credentials.
             """
-            user = get_user_model().objects.filter(username=data['username']).first()
+            user = get_user_model().objects.filter(email=data['email']).first()
             if user is None or not user.check_password(data['password']):
-                raise exceptions.AuthenticationFailed(_("Invalid username or password."))
+                raise exceptions.AuthenticationFailed(_("Invalid email or password."))
             return data
