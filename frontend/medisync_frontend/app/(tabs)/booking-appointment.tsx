@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function BookingAppointmentScreen() { // Changed component name
+function BookingAppointmentScreen() { // Changed component name
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Book Your Appointment</Text> {/* Changed text */}
@@ -10,6 +10,8 @@ export default function BookingAppointmentScreen() { // Changed component name
     </View>
   );
 }
+
+export default BookingAppointmentScreen;
 
 const styles = StyleSheet.create({
   container: {

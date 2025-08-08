@@ -1,9 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Platform, Easing } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Platform, Easing } from 'react-native';
 import { router } from 'expo-router';
 
 const PRIMARY_COLOR = '#286660';
-const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function RoleSelectionScreen() {
   // Animated rotation for the logo
@@ -25,10 +24,6 @@ export default function RoleSelectionScreen() {
     outputRange: ['0deg', '360deg'],
   });
 
-  const handleRoleSelect = () => {
-    router.replace('/auth/signup');
-  };
-
   return (
     <View style={styles.container}>
       {/* Logo and Title */}
@@ -43,14 +38,23 @@ export default function RoleSelectionScreen() {
       <Text style={styles.question}>Which role best describes you?</Text>
       {/* Buttons */}
       <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.roleButton} onPress={handleRoleSelect}>
-          <Text style={styles.roleButtonText}>Physician</Text>
+        <TouchableOpacity 
+          style={styles.roleButton} 
+          onPress={() => router.replace("/doctor/doctor-signup")}
+        >
+          <Text style={styles.roleButtonText}>Doctor</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.roleButton} onPress={handleRoleSelect}>
+        <TouchableOpacity 
+          style={styles.roleButton} 
+          onPress={() => router.replace("/nurses/nurse-signup")}
+        >
           <Text style={styles.roleButtonText}>Nurse</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity style={[styles.roleButton, styles.patientButton]} onPress={handleRoleSelect}>
+      <TouchableOpacity 
+        style={[styles.roleButton, styles.patientButton]} 
+        onPress={() => router.replace("/auth/signup")}
+      >
         <Text style={styles.roleButtonText}>Patient</Text>
       </TouchableOpacity>
     </View>

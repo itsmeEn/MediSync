@@ -1,0 +1,12 @@
+{
+  "venvPath": ".",
+  "venv": "venv",
+  "pythonPath": "venv/bin/python",
+  "extraPaths": [
+    "venv/lib/python3.12/site-packages"
+  ],
+  "reportMissingImports": false,
+  "reportMissingModuleSource": false,
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic"
+} 

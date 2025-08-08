@@ -2,7 +2,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 
-export default function QueueingScreen() {
+const QueueingScreen = () => {
   // Changed component name
   return (
     <View style={styles.container}>
@@ -11,6 +11,8 @@ export default function QueueingScreen() {
     </View>
   );
 }
+
+export default QueueingScreen;
 
 const styles = StyleSheet.create({
   container: {

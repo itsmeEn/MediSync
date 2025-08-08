@@ -31,6 +31,10 @@ export default function RootLayout() {
         <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
         <Stack.Screen name="auth/options" options={{ headerShown: false }} />
         <Stack.Screen name="auth/role-selection" options={{ headerShown: false }} />
+        <Stack.Screen name="doctor/doctor-signup" options={{ headerShown: false }} />
+        <Stack.Screen name="nurses/nurse-signup" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/terms" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/verification" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

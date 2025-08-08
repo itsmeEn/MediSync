@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  Dimensions,
 } from "react-native";
 import { router } from "expo-router"; //using Expo Router for navigation
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const googleLogo = require("../../assets/images/google.png");
 
 // Get screen dimensions for potential responsive sizing if needed later
-const { width, height } = Dimensions.get("window");
+// const { width, height } = Dimensions.get("window");
 
 const OptionsScreen: React.FC = () => {
   // Handler for Login button press
@@ -83,7 +82,9 @@ const OptionsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1, // Takes up the full height of the screen
-    backgroundColor: "#ffffff", // Main background color for the whole screen
+    backgroundImage: require('../../assets/images/background.png'),
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
   },
   circleWrapper: {
     flex: 1.2, // This section takes 1.2 parts of the available vertical space

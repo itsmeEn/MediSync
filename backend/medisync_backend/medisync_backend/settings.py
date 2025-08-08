@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-qc*2thhf$u1=5mtdcb@%v^33a95@mz0w9h$w^s93rmtv_n*i$d
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["http://localhost:8081"] # Medisync frontend URL for webpack Dev Server
+ALLOWED_HOSTS = ["http://localhost:8081", "http://localhost:3000",] # Medisync frontend URL for webpack Dev Server
 
 
 # Application definition
@@ -45,6 +45,10 @@ INSTALLED_APPS = [
     "medisync_backend",  # Main app for the backend
     "crispy_forms",  # For crispy forms
     "crispy_tailwind",  # For crispy forms with Tailwind CSS
+    "operations",
+    "analytics",
+    "communications",
+    "ai_insights",
     
 ]
 
@@ -140,9 +144,6 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
@@ -151,21 +152,22 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     
-    "JWT_EXPIRATION_DELTA": datetime.timedelta(days=3), # how long the token is valid
-    "JWT_ALLOW_REFRESH": True,
-    "UPDATE_LAST_LOGIN": True,
-    "JWT_REFRESH_EXPIRATION_DELTA": datetime.timedelta(days=7), # how long the refresh token is valid
-    
-    
-    "ALLGORITHM": "HS256", # the algorithm used to encode the token
-    "SIGNING_KEY": SECRET_KEY, # the key used to sign the token
-    "AUTH_HEADER_TYPES": ("Bearer",), # the type of header used to send the token
-    "AUTH_HEADER_PREFIX": "Bearer", # the prefix used in the header
-    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",), # the type of token used
-    "TOKEN_TYPE_CLAIM": "token_type", # the claim used to identify the token type
-    "USER_ID_FIELD": "id", # the field used to identify the user
-    "USER_ID_CLAIM": "user_id", # the claim used to identify the user
-    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",), # the type of token used
+    "ACCESS_TOKEN_LIFETIME": datetime.timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": datetime.timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": False,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "VERIFYING_KEY": None,
+    "AUDIENCE": None,
+    "ISSUER": None,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
 }
 
 #specific styling for crispy forms

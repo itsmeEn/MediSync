@@ -1,117 +1,149 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Dimensions,
   Platform,
   ScrollView,
   Alert,
-  Modal, // Import Modal for iOS date picker
+  Modal,
+  ImageBackground,
+  Image,
+  StyleSheet,
 } from "react-native";
+import Toast from "react-native-toast-message";
 import { Feather } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import DateTimePicker from "@react-native-community/datetimepicker"; // Import date picker
-import { Picker } from "@react-native-picker/picker"; // Import picker for dropdown
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Picker } from "@react-native-picker/picker";
+import { Formik } from "formik";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PRIMARY_COLOR = "#286660";
-const ACCENT_COLOR = "#bed2d0"; // Not directly used in styling but kept for reference
-const SCREEN_WIDTH = Dimensions.get("window").width;
 
-export default function SignupScreen() {
-  const { role = "patient" } = useLocalSearchParams(); // Default to 'patient' in lowercase
-  const selectedRole = String(role).toLowerCase(); // Ensure role is lowercase for comparisons
+function SignupScreen() {
+  const params = useLocalSearchParams();
+  const termsAccepted = params.termsAccepted;
+  const hasSetAgree = useRef(false);
 
-  const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-
-  const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined); // Store as Date object
-  const [showDatePicker, setShowDatePicker] = useState(false); // State to control date picker visibility
-  const [gender, setGender] = useState(""); // Default gender for picker
-  const [showGenderPicker, setShowGenderPicker] = useState(false); // State to control gender picker visibility
-
-  const [address, setAddress] = useState("");
-  const [password, setPassword] = useState(""); // Changed password1 to password
-  const [password2, setPassword2] = useState("");
-  const [agree, setAgree] = useState(false);
+  // UI state for pickers
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showGenderPicker, setShowGenderPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // New states for conditional fields (e.g., for 'doctor' or 'nurse')
-  const [medicalLicenseNumber, setMedicalLicenseNumber] = useState("");
-  const [specialty, setSpecialty] = useState("");
+  // Initial form values for patient
+  const initialValues = {
+    email: "",
+    full_name: "",
+    phone_number: "",
+    date_of_birth: "",
+    gender: "",
+    address: "",
+    password: "",
+    password2: "",
+    agree: false,
+  };
+
+  // Load saved form data when component mounts
+  useEffect(() => {
+    loadFormData();
+  }, []);
+
+  const loadFormData = async () => {
+    try {
+      const savedData = await AsyncStorage.getItem('signupFormData');
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        // Restore form data if it exists
+        if (parsedData.timestamp && Date.now() - parsedData.timestamp < 300000) { // 5 minutes
+          return parsedData.formData;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading form data:', error);
+    }
+    return initialValues;
+  };
+
+  const saveFormData = async (formData: any) => {
+    try {
+      await AsyncStorage.setItem('signupFormData', JSON.stringify({
+        formData,
+        timestamp: Date.now()
+      }));
+    } catch (error) {
+      console.error('Error saving form data:', error);
+    }
+  };
+
+  const clearFormData = async () => {
+    try {
+      await AsyncStorage.removeItem('signupFormData');
+    } catch (error) {
+      console.error('Error clearing form data:', error);
+    }
+  };
 
   // --- Date Picker Handlers ---
-  const onChangeDate = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || dateOfBirth;
-    setShowDatePicker(Platform.OS === "ios"); // On iOS, keep true to show modal
-    setDateOfBirth(currentDate);
+  const onChangeDate = (formik: any, event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === "ios");
+    if (selectedDate) {
+      formik.setFieldValue(
+        "date_of_birth",
+        selectedDate.toISOString().split("T")[0]
+      );
+    }
   };
 
   const showDatepicker = () => {
     setShowDatePicker(true);
   };
 
-  const getFormattedDate = (date?: Date) => {
-    if (!date) return "";
-    return date.toISOString().split("T")[0]; // YYYY-MM-DD
-  };
-
-  // --- Signup Handler ---
-  const handleSignup = async () => {
+  // --- Form Submission Handler ---
+  const handleSubmit = async (values: any, { setSubmitting }: any) => {
     setLoading(true);
 
     // Basic frontend validation
     if (
-      !email ||
-      !firstName ||
-      !lastName ||
-      !password ||
-      !password2 ||
-      !gender ||
-      !dateOfBirth
+      !values.email ||
+      !values.full_name ||
+      !values.password ||
+      !values.password2 ||
+      !values.gender ||
+      !values.date_of_birth
     ) {
       Alert.alert(
         "Error",
-        "Please fill in all required fields: Email, Name, Password, Gender, Date of Birth."
+        "Please fill in all required fields: Email, Full Name, Password, Gender, and Date of Birth."
       );
       setLoading(false);
+      setSubmitting(false);
       return;
     }
-    if (password !== password2) {
-      Alert.alert("Error", "Passwords do not match.");
+
+    if (!values.agree) {
+      Toast.show({
+        text1: "Please agree to the terms and service.",
+        type: "error",
+      });
       setLoading(false);
-      return;
-    }
-    if (!agree) {
-      Alert.alert("Error", "Please agree to the terms and service.");
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
     const payload = {
-      username: email.split("@")[0], // Using email prefix as username for simplicity, adjust as needed
-      email: email,
-      password: password,
-      password2: password2, // Backend expects this for confirmation
-      role: selectedRole,
-      first_name: firstName,
-      last_name: lastName,
-      phone_number: phoneNumber,
-      date_of_birth: getFormattedDate(dateOfBirth), // Send formatted date
-      gender: gender,
-      address: address,
-      // Include conditional fields if applicable
-      ...((selectedRole === "doctor" || selectedRole === "nurse") && {
-        medical_license_number: medicalLicenseNumber,
-      }),
-      ...(selectedRole === "doctor" && {
-        specialty: specialty,
-      }),
+      email: values.email,
+      password: values.password,
+      password2: values.password2,
+      role: "patient",
+      full_name: values.full_name,
+      phone_number: values.phone_number,
+      date_of_birth: values.date_of_birth,
+      gender: values.gender,
+      address: values.address,
     };
 
     try {
@@ -130,16 +162,9 @@ export default function SignupScreen() {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert("Success", "Registration successful! Please log in.");
+        Alert.alert("Success", "Registration successful! Please verify your account.");
         console.log("Registration data:", data);
-        // Redirect based on role
-        if (selectedRole === "doctor") {
-          router.replace("/doctor-dashboard" as any); // Or '/(tabs)/doctor-dashboard' depending on your file structure
-        } else if (selectedRole === "nurse") {
-          router.replace("/nurse-dashboard" as any); // Or '/(tabs)/nurse-dashboard'
-        } else {
-          router.replace("/(tabs)/home" as any); // Default patient dashboard/home after login
-        }
+        router.replace("/auth/verification" as any);
       } else {
         let errorMessage = "Registration failed. Please try again.";
         if (data && data.error) {
@@ -166,512 +191,512 @@ export default function SignupScreen() {
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.bg}
-      keyboardShouldPersistTaps="handled"
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerDots}>•••</Text>
-        <Text style={styles.headerTitle}>Sign Up</Text>
-        <TouchableOpacity
-          style={styles.closeIcon}
-          onPress={() => router.replace("/auth/login")}
+    <View style={styles.container}>
+      {/* Top Section - Background Image */}
+      <View style={styles.topSection}>
+        <ImageBackground
+          source={require('../../assets/images/background.png')}
+          style={styles.backgroundImage}
+          resizeMode="cover"
         >
-          <Feather name="x" size={28} color="#fff" />
-        </TouchableOpacity>
-      </View>
-      {/* Card */}
-      <LinearGradient
-        colors={["#e6f2ef", "#f8fbfa"]}
-        start={[0, 0]}
-        end={[0, 1]}
-        style={styles.card}
-      >
-        <Text style={styles.cardTitle}>Create your account</Text>
-        {/* Role label */}
-        <View style={styles.labelGroup}>
-          <Text style={styles.label}>Role:</Text>
-          <Text style={styles.roleLabel}>
-            {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}
-          </Text>
-        </View>
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#28666099"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            textContentType="emailAddress"
-          />
-        </View>
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="First Name"
-            placeholderTextColor="#28666099"
-            value={firstName}
-            onChangeText={setFirstName}
-            autoCapitalize="words"
-          />
-        </View>
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="Last Name"
-            placeholderTextColor="#28666099"
-            value={lastName}
-            onChangeText={setLastName}
-            autoCapitalize="words"
-          />
-        </View>
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="Phone Number"
-            placeholderTextColor="#28666099"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            keyboardType="phone-pad"
-          />
-        </View>
-
-        {/* Gender and Date of Birth side by side */}
-        <View style={styles.rowInputs}>
-          {/* Gender Picker */}
-          <TouchableOpacity
-            style={[
-              styles.inputGroup,
-              styles.pickerTrigger,
-              { flex: 1, marginRight: 8 },
-            ]}
-            onPress={() => setShowGenderPicker(true)}
-          >
-            <Text
-              style={[
-                styles.input,
-                { color: gender ? PRIMARY_COLOR : "#28666099" },
-              ]}
-            >
-              {gender || "Select Gender"}
-            </Text>
-            <Feather name="chevron-down" size={20} color={PRIMARY_COLOR} />
-          </TouchableOpacity>
-          <Modal
-            transparent={true}
-            visible={showGenderPicker}
-            animationType="slide"
-            onRequestClose={() => setShowGenderPicker(false)}
-          >
-            <View style={styles.pickerModalOverlay}>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={gender}
-                  onValueChange={(itemValue) => {
-                    setGender(itemValue);
-                    if (Platform.OS === "android") setShowGenderPicker(false); // Close immediately on Android
-                  }}
-                  itemStyle={styles.pickerItem}
-                >
-                  <Picker.Item
-                    label="Select Gender"
-                    value=""
-                    enabled={false}
-                    style={styles.placeholderItem}
-                  />
-                  <Picker.Item label="Male" value="male" />
-                  <Picker.Item label="Female" value="female" />
-                  <Picker.Item label="Non-binary" value="non-binary" />
-                </Picker>
-                {Platform.OS === "ios" && (
-                  <TouchableOpacity
-                    onPress={() => setShowGenderPicker(false)}
-                    style={styles.pickerDoneButton}
-                  >
-                    <Text style={styles.pickerDoneButtonText}>Done</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+          {/* Logo */}
+          <View style={styles.logoContainer}>
+            <View style={styles.logo}>
+              <Image source={require('../../assets/images/logo.png')} style={styles.logoImage} />
             </View>
-          </Modal>
+          </View>
+        </ImageBackground>
+      </View>
 
-          {/* Date of Birth Picker */}
-          <TouchableOpacity
-            style={[
-              styles.inputGroup,
-              styles.pickerTrigger,
-              { flex: 1, marginLeft: 8 },
-            ]}
-            onPress={showDatepicker}
-          >
-            <Text
-              style={[
-                styles.input,
-                { color: dateOfBirth ? PRIMARY_COLOR : "#28666099" },
-              ]}
-            >
-              {getFormattedDate(dateOfBirth) || "Date of Birth (YYYY-MM-DD)"}
-            </Text>
-            <Feather name="calendar" size={20} color={PRIMARY_COLOR} />
-          </TouchableOpacity>
-          {showDatePicker && (
-            <DateTimePicker
-              testID="datePicker"
-              value={dateOfBirth || new Date()}
-              mode="date"
-              display={Platform.OS === "ios" ? "spinner" : "default"} // 'spinner' for iOS, 'default' for Android
-              onChange={onChangeDate}
-              maximumDate={new Date()} // Cannot select future dates
-            />
-          )}
-          {/* For iOS, you typically wrap DateTimePicker in a Modal */}
-          {Platform.OS === "ios" && showDatePicker && (
-            <Modal
-              transparent={true}
-              animationType="slide"
-              visible={showDatePicker}
-              onRequestClose={() => setShowDatePicker(false)}
-            >
-              <View style={styles.pickerModalOverlay}>
-                <View style={styles.iosDatePickerContainer}>
-                  <TouchableOpacity
-                    onPress={() => setShowDatePicker(false)}
-                    style={styles.pickerDoneButton}
-                  >
-                    <Text style={styles.pickerDoneButtonText}>Done</Text>
+      {/* Bottom Section - Form */}
+      <View style={styles.bottomSection}>
+        <Formik
+          initialValues={initialValues}
+          onSubmit={handleSubmit}
+          enableReinitialize={true}
+        >
+          {({ handleChange, handleBlur, values, setFieldValue }) => {
+            // Handle terms acceptance - only set once when terms are accepted
+            if (termsAccepted === "true" && !hasSetAgree.current) {
+              setFieldValue("agree", true);
+              hasSetAgree.current = true;
+            }
+            
+            return (
+              <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled={true}
+              >
+                {/* Header */}
+                <View style={styles.header}>
+                  <TouchableOpacity style={styles.backButton} onPress={() => router.push('/auth/role-selection')}>
+                    <Feather name="arrow-left" size={24} color="#fff" />
                   </TouchableOpacity>
-                  <DateTimePicker
-                    testID="dateTimePickeriOS"
-                    value={dateOfBirth || new Date()}
-                    mode="date"
-                    display="spinner"
-                    onChange={onChangeDate}
-                    maximumDate={new Date()}
+                  <Text style={styles.headerTitle}>Create Account</Text>
+                </View>
+                
+                {/* Input Fields */}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>FULL NAME</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your full name"
+                    placeholderTextColor="#000000"
+                    value={values.full_name}
+                    onChangeText={handleChange("full_name")}
+                    onBlur={handleBlur("full_name")}
+                    autoCapitalize="words"
                   />
                 </View>
-              </View>
-            </Modal>
-          )}
-        </View>
 
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="Address"
-            placeholderTextColor="#28666099"
-            value={address}
-            onChangeText={setAddress}
-            autoCapitalize="words"
-          />
-        </View>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>EMAIL</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your email"
+                    placeholderTextColor="#000000"
+                    value={values.email}
+                    onChangeText={handleChange("email")}
+                    onBlur={handleBlur("email")}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    textContentType="emailAddress"
+                  />
+                </View>
 
-        {/* Conditional fields for Doctor/Nurse */}
-        {(selectedRole === "doctor" || selectedRole === "nurse") && (
-          <>
-            <View style={styles.inputGroup}>
-              <TextInput
-                style={styles.input}
-                placeholder="Medical License Number"
-                placeholderTextColor="#28666099"
-                value={medicalLicenseNumber}
-                onChangeText={setMedicalLicenseNumber}
-                autoCapitalize="words"
-              />
-            </View>
-            {selectedRole === "doctor" && (
-              <View style={styles.inputGroup}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Specialty (e.g., Cardiology)"
-                  placeholderTextColor="#28666099"
-                  value={specialty}
-                  onChangeText={setSpecialty}
-                  autoCapitalize="words"
-                />
-              </View>
-            )}
-            {/* Add more specific fields for doctors/nurses here */}
-          </>
-        )}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>PHONE NUMBER</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your phone number"
+                    placeholderTextColor="#000000"
+                    value={values.phone_number}
+                    onChangeText={handleChange("phone_number")}
+                    onBlur={handleBlur("phone_number")}
+                    keyboardType="phone-pad"
+                  />
+                </View>
 
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#28666099"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={true}
-            autoCapitalize="none"
-            textContentType="newPassword"
-          />
-        </View>
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm Password"
-            placeholderTextColor="#28666099"
-            value={password2}
-            onChangeText={setPassword2}
-            secureTextEntry={true}
-            autoCapitalize="none"
-            textContentType="newPassword"
-          />
-        </View>
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => setAgree((a) => !a)}
-        >
-          <View style={[styles.checkbox, agree && styles.checkboxChecked]}>
-            {agree && <Feather name="check" size={16} color="#fff" />}
-          </View>
-          <Text style={styles.checkboxLabel}>
-            I agree to the terms and service
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.signupBtn}
-          onPress={handleSignup}
-          disabled={loading}
-        >
-          <Text style={styles.signupBtnText}>
-            {loading ? "Signing up..." : "Sign Up"}
-          </Text>
-        </TouchableOpacity>
-        <View style={styles.loginRow}>
-          <Text style={styles.loginText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => router.replace("/auth/login")}>
-            <Text style={styles.loginLink}>Log In</Text>
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
-    </ScrollView>
+                {/* Gender and Date of Birth side by side */}
+                <View style={styles.rowInputs}>
+                  {/* Gender Picker */}
+                  <View style={styles.halfInputContainer}>
+                    <Text style={styles.inputLabel}>GENDER</Text>
+                    <TouchableOpacity
+                      style={styles.pickerTrigger}
+                      onPress={() => setShowGenderPicker(true)}
+                    >
+                      <Text style={styles.pickerText}>
+                        {values.gender || "Select Gender"}
+                      </Text>
+                      <Feather
+                        name="chevron-down"
+                        size={20}
+                        color="#000000"
+                      />
+                    </TouchableOpacity>
+                    <Modal
+                      transparent={true}
+                      visible={showGenderPicker}
+                      animationType="slide"
+                      onRequestClose={() => setShowGenderPicker(false)}
+                    >
+                      <View style={styles.pickerModalOverlay}>
+                        <View style={styles.pickerContainer}>
+                          <Picker
+                            selectedValue={values.gender}
+                            onValueChange={(itemValue) => {
+                              setFieldValue("gender", itemValue);
+                              if (
+                                Platform.OS === "android" ||
+                                Platform.OS === "web"
+                              ) {
+                                setShowGenderPicker(false);
+                              }
+                            }}
+                            itemStyle={styles.pickerItem}
+                          >
+                            <Picker.Item
+                              label="Select Gender"
+                              value=""
+                              enabled={false}
+                            />
+                            <Picker.Item label="Male" value="male" />
+                            <Picker.Item label="Female" value="female" />
+                            <Picker.Item
+                              label="Non-binary"
+                              value="non-binary"
+                            />
+                          </Picker>
+                          {(Platform.OS === "ios" || Platform.OS === "web") && (
+                            <TouchableOpacity
+                              style={styles.pickerDoneButton}
+                              onPress={() => setShowGenderPicker(false)}
+                            >
+                              <Text style={styles.pickerDoneButtonText}>
+                                Done
+                              </Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    </Modal>
+                  </View>
+
+                  {/* Date of Birth */}
+                  <View style={styles.halfInputContainer}>
+                    <Text style={styles.inputLabel}>DATE OF BIRTH</Text>
+                    {Platform.OS === "web" ? (
+                      <TextInput
+                        style={styles.input}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor="#000000"
+                        value={values.date_of_birth}
+                        onChangeText={handleChange("date_of_birth")}
+                        onBlur={handleBlur("date_of_birth")}
+                      />
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.pickerTrigger}
+                        onPress={showDatepicker}
+                      >
+                        <Text style={styles.pickerText}>
+                          {values.date_of_birth || "Select Date"}
+                        </Text>
+                        <Feather
+                          name="calendar"
+                          size={20}
+                          color="#000000"
+                        />
+                      </TouchableOpacity>
+                    )}
+                    {showDatePicker && (
+                      <DateTimePicker
+                        value={new Date()}
+                        mode="date"
+                        display={Platform.OS === "ios" ? "spinner" : "default"}
+                        onChange={(event, selectedDate) =>
+                          onChangeDate({ setFieldValue }, event, selectedDate)
+                        }
+                      />
+                    )}
+                  </View>
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>ADDRESS</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your address"
+                    placeholderTextColor="#000000"
+                    value={values.address}
+                    onChangeText={handleChange("address")}
+                    onBlur={handleBlur("address")}
+                    autoCapitalize="words"
+                    multiline
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>PASSWORD</Text>
+                  <View style={styles.passwordInputContainer}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      placeholder="Enter your password"
+                      placeholderTextColor="#000000"
+                      value={values.password}
+                      onChangeText={handleChange("password")}
+                      onBlur={handleBlur("password")}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      textContentType="password"
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      <Feather
+                        name={showPassword ? "eye" : "eye-off"}
+                        size={20}
+                        color="#000"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>CONFIRM PASSWORD</Text>
+                  <View style={styles.passwordInputContainer}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      placeholder="Confirm your password"
+                      placeholderTextColor="#000000"
+                      value={values.password2}
+                      onChangeText={handleChange("password2")}
+                      onBlur={handleBlur("password2")}
+                      secureTextEntry={!showConfirmPassword}
+                      autoCapitalize="none"
+                      textContentType="password"
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      <Feather
+                        name={showConfirmPassword ? "eye" : "eye-off"}
+                        size={20}
+                        color="#000"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.checkboxRow}
+                  onPress={async () => {
+                    // Save current form data before navigating to terms
+                    await saveFormData(values);
+                    router.push('/auth/terms');
+                  }}
+                >
+                  <View
+                    style={[
+                      styles.checkbox,
+                      values.agree && styles.checkboxChecked,
+                    ]}
+                  >
+                    {values.agree && (
+                      <Feather name="check" size={16} color="#fff" />
+                    )}
+                  </View>
+                  <Text style={styles.checkboxLabel}>
+                    I agree to the terms and service
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.signupButton,
+                    loading && styles.signupButtonDisabled,
+                  ]}
+                  onPress={async () => {
+                    // Clear saved form data on successful submission
+                    await clearFormData();
+                    handleSubmit(values, { setSubmitting: () => {} });
+                  }}
+                  disabled={loading}
+                >
+                  <Text style={styles.signupButtonText}>
+                    {loading ? "Signing up..." : "Sign up"}
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            );
+          }}
+        </Formik>
+      </View>
+    </View>
   );
 }
 
+export default SignupScreen;
+
 const styles = StyleSheet.create({
-  bg: {
-    flexGrow: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    paddingTop: 160,
-    minHeight: "100%",
+  container: {
+    flex: 1,
   },
-  header: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    width: "100%",
-    backgroundColor: PRIMARY_COLOR,
-    borderBottomLeftRadius: 44,
-    borderBottomRightRadius: 44,
-    minHeight: 120,
-    alignItems: "flex-start",
-    justifyContent: "flex-start",
-    paddingTop: 24,
-    paddingBottom: 18,
-    paddingHorizontal: 28,
+  topSection: {
+    flex: 0.5, // Increased significantly to give more space for the full image
+  },
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '50%',
+  },
+  logoContainer: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
     zIndex: 10,
   },
-  headerDots: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#fff",
-    marginBottom: 8,
-    marginLeft: 2,
-    letterSpacing: 6,
+  logo: {
+    width: 50,
+    height: 50,
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: PRIMARY_COLOR,
+  },
+  logoImage: {
+    width: 40,
+    height: 40,
+    resizeMode: 'contain',
+  },
+  bottomSection: {
+    flex: 1, // Adjusted to work with the larger top section
+    backgroundColor: PRIMARY_COLOR,
+    paddingHorizontal: 20,
+    paddingTop: 30,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+    flexGrow: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  backButton: {
+    marginRight: 15,
   },
   headerTitle: {
-    fontSize: 36,
-    fontWeight: "bold",
-    color: "#fff",
-    lineHeight: 40,
-    marginBottom: 0,
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
   },
-  closeIcon: {
-    position: "absolute",
-    right: 24,
-    top: 28,
-    zIndex: 2,
+  inputContainer: {
+    marginBottom: 20,
   },
-  card: {
-    width: "90%",
-    maxWidth: 400,
-    borderRadius: 24,
-    borderWidth: 3,
-    borderColor: PRIMARY_COLOR,
-    paddingVertical: 32,
-    paddingHorizontal: 18,
-    alignItems: "center",
-    marginTop: 24,
-    backgroundColor: "transparent",
-    alignSelf: "center",
-  },
-  cardTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: PRIMARY_COLOR,
-    marginBottom: 22,
-    textAlign: "center",
-  },
-  labelGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    marginBottom: 10,
-    marginLeft: 2,
-  },
-  label: {
-    fontWeight: "bold",
-    fontSize: 16,
-    color: PRIMARY_COLOR,
-    marginRight: 8,
-  },
-  roleLabel: {
-    fontWeight: "bold",
-    fontSize: 16,
-    color: "#18304a",
-    backgroundColor: "#e6f2ef",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  inputGroup: {
-    width: "100%",
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    borderWidth: 3,
-    borderColor: PRIMARY_COLOR,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 18,
-    paddingHorizontal: 16,
-    height: 54,
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#bed2d0',
+    marginBottom: 8,
+    textTransform: 'uppercase',
   },
   input: {
+    backgroundColor: '#bed2d0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: '#000',
+    borderWidth: 1,
+    borderColor: '#bed2d0',
+  },
+  rowInputs: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  halfInputContainer: {
+    flex: 0.48,
+  },
+  pickerTrigger: {
+    backgroundColor: '#bed2d0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#bed2d0',
+  },
+  pickerText: {
+    color: '#000',
+    fontSize: 16,
+  },
+  pickerModalOverlay: {
     flex: 1,
-    fontSize: 18,
-    color: PRIMARY_COLOR,
-    backgroundColor: "transparent",
-    fontWeight: "500",
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-    fontFamily: Platform.OS === "web" ? undefined : "System",
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  pickerContainer: {
+    backgroundColor: '#bed2d0',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 20,
+  },
+  pickerItem: {
+    color: '#000',
+  },
+  pickerDoneButton: {
+    backgroundColor: PRIMARY_COLOR,
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  pickerDoneButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#bed2d0',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#bed2d0',
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: '#000',
+  },
+  eyeIcon: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   checkboxRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 18,
-    alignSelf: "flex-start",
-    marginLeft: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   checkbox: {
     width: 22,
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: PRIMARY_COLOR,
-    marginRight: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
+    borderColor: '#bed2d0',
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   checkboxChecked: {
-    backgroundColor: PRIMARY_COLOR,
-    borderColor: PRIMARY_COLOR,
+    backgroundColor: '#bed2d0',
+    borderColor: '#bed2d0',
   },
   checkboxLabel: {
-    fontWeight: "500",
-    fontSize: 15,
-    color: PRIMARY_COLOR,
-  },
-  signupBtn: {
-    backgroundColor: PRIMARY_COLOR,
-    borderRadius: 28,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-    marginTop: 8,
-    marginBottom: 18,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  signupBtnText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 19,
-    letterSpacing: 1,
-  },
-  loginRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 0,
-    marginTop: 4,
-  },
-  loginText: {
-    color: PRIMARY_COLOR,
-    fontSize: 15,
-    fontWeight: "500",
-  },
-  loginLink: {
-    color: PRIMARY_COLOR,
-    fontWeight: "700",
-    marginLeft: 5,
-    textDecorationLine: "underline",
-    fontSize: 15,
-  },
-  rowInputs: {
-    flexDirection: "row",
-    width: "100%",
-    marginBottom: 18,
-  },
-  pickerTrigger: {
-    justifyContent: "space-between",
-  },
-  pickerModalOverlay: {
+    color: '#bed2d0',
+    fontSize: 14,
     flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
-  pickerContainer: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 10,
+  signupButton: {
+    backgroundColor: '#bed2d0',
+    borderRadius: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginTop: 20,
+    marginBottom: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  iosDatePickerContainer: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 10,
-    paddingBottom: Platform.OS === "ios" ? 20 : 0, // Extra padding for iOS
+  signupButtonDisabled: {
+    opacity: 0.7,
   },
-  pickerDoneButton: {
-    alignSelf: "flex-end",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  pickerDoneButtonText: {
-    color: PRIMARY_COLOR,
-    fontWeight: "bold",
-    fontSize: 18,
-  },
-  pickerItem: {
-    // Style for Picker.Item
+  signupButtonText: {
     color: PRIMARY_COLOR,
     fontSize: 18,
-  },
-  placeholderItem: {
-    color: "#28666099", // Placeholder color
+    fontWeight: 'bold',
   },
 });

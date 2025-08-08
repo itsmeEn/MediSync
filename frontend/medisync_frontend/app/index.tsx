@@ -1,6 +1,6 @@
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useRef, useState } from "react";
-import { View, Image, Text, StyleSheet, Animated, Dimensions } from "react-native";
+import { Image, Text, StyleSheet, Animated, Dimensions } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -46,7 +46,7 @@ export default function Index() {
       clearTimeout(typingTimer);
       clearTimeout(navigationTimer);
     };
-  }, []);
+  }, [fadeAnim, scaleAnim]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -72,7 +72,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f3f4f8",
   },
   logoContainer: {
     alignItems: "center",
@@ -92,5 +91,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     letterSpacing: 2,
     textAlign: "center",
+    fontFamily: "Faustina"
   },
 });

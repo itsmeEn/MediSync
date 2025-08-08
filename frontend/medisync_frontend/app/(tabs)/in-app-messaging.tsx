@@ -2,7 +2,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 
-export default function InAppMessagingScreen() {
+function InAppMessagingScreen() {
   // Changed component name
   return (
     <View style={styles.container}>
@@ -11,6 +11,8 @@ export default function InAppMessagingScreen() {
     </View>
   );
 }
+
+export default InAppMessagingScreen;
 
 const styles = StyleSheet.create({
   container: {

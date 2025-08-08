@@ -1,0 +1,202 @@
+import { StyleSheet } from 'react-native';
+
+const PRIMARY_COLOR = "#286660";
+const ACCENT_COLOR = "#bed2d0";
+const ACCENT_RED = "#e74c3c";
+
+const styles = StyleSheet.create({
+  bg: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  header: {
+    width: '100%',
+    backgroundColor: PRIMARY_COLOR,
+    borderBottomLeftRadius: 44,
+    borderBottomRightRadius: 44,
+    minHeight: 120,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    paddingTop: 24,
+    paddingBottom: 18,
+    paddingHorizontal: 28,
+    marginBottom: -40,
+    position: 'relative',
+  },
+  headerTitle: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#fff',
+    lineHeight: 40,
+    marginBottom: 0,
+  },
+  closeIcon: {
+    position: 'absolute',
+    right: 24,
+    top: 28,
+    zIndex: 2,
+  },
+  card: {
+    width: '90%',
+    maxWidth: 400,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: PRIMARY_COLOR,
+    paddingVertical: 32,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    marginTop: 100,
+    backgroundColor: 'transparent',
+  },
+  cardTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: PRIMARY_COLOR,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  labelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    color: PRIMARY_COLOR,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  roleLabel: {
+    fontSize: 16,
+    color: ACCENT_RED,
+    fontWeight: 'bold',
+  },
+  inputGroup: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: PRIMARY_COLOR,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  rowInputs: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 16,
+  },
+  pickerTrigger: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  pickerModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  pickerContainer: {
+    backgroundColor: '#f8f9fa',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 20,
+  },
+  pickerItem: {
+    color: PRIMARY_COLOR,
+  },
+  placeholderItem: {
+    color: '#6c757d',
+  },
+  pickerDoneButton: {
+    backgroundColor: ACCENT_RED,
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  pickerDoneButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  iosDatePickerContainer: {
+    backgroundColor: '#f8f9fa',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 20,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: ACCENT_RED,
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  checkboxChecked: {
+    backgroundColor: ACCENT_RED,
+    borderColor: ACCENT_RED,
+  },
+  checkboxLabel: {
+    color: PRIMARY_COLOR,
+    fontSize: 14,
+    flex: 1,
+  },
+  signupBtn: {
+    backgroundColor: ACCENT_RED,
+    borderRadius: 12,
+    paddingVertical: 18,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 30,
+    shadowColor: ACCENT_RED,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  signupBtnText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  loginRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginText: {
+    color: PRIMARY_COLOR,
+    fontSize: 16,
+  },
+  loginLink: {
+    color: ACCENT_RED,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
+
+export default styles; 
