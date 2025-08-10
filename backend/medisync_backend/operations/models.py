@@ -103,6 +103,7 @@ class MedicalRecord(models.Model):
     doctor = models.ForeignKey(DoctorProfile, on_delete=models.CASCADE, related_name='medical_records')
     record_date = models.DateField()
     diagnosis = models.TextField()
+    symptoms = models.TextField()
     treatment = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
