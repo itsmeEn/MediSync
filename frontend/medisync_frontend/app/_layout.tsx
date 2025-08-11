@@ -9,6 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
+import "react-native-gesture-handler";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -31,6 +32,7 @@ export default function RootLayout() {
         <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
         <Stack.Screen name="auth/options" options={{ headerShown: false }} />
         <Stack.Screen name="auth/role-selection" options={{ headerShown: false }} />
+        <Stack.Screen name="doctor" options={{ headerShown: false }} />
         <Stack.Screen name="doctor/doctor-signup" options={{ headerShown: false }} />
         <Stack.Screen name="nurses/nurse-signup" options={{ headerShown: false }} />
         <Stack.Screen name="auth/terms" options={{ headerShown: false }} />

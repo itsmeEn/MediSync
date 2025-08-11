@@ -8,9 +8,11 @@ import {
   Platform,
   ImageBackground,
   Image,
+  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PRIMARY_COLOR = "#286660";
 
@@ -18,17 +20,76 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading] = useState(false);
-  const [role] = useState<"doctor" | "nurse" | "patient">("patient");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    //redirect to home screen based on role
-    if (role === "doctor") {
-      router.replace("/doctor/sidenav/doctor-dashboard");
-    } else if (role === "nurse") {
-      router.replace("/nurses/nurses-dashboard");
-    } else {
-      router.replace("/(tabs)/dashboard");
+    if (!email || !password) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const API_URL =
+        Platform.OS === "ios"
+          ? "http://localhost:8000/api"
+          : "http://10.0.2.2:8000/api";
+      
+      const response = await fetch(`${API_URL}/login/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Save user data and token
+        try {
+          const userDataToSave = {
+            full_name: data.profile?.full_name || "User",
+            role: data.profile?.role || "patient",
+            email: email,
+            token: data.token,
+            uid: data.uid,
+          };
+          await AsyncStorage.setItem('userData', JSON.stringify(userDataToSave));
+          console.log('User data saved on login:', userDataToSave);
+        } catch (error) {
+          console.error('Error saving user data:', error);
+        }
+
+        // Redirect based on role
+        const userRole = data.profile?.role || "patient";
+        if (userRole === "doctor") {
+          router.replace("/doctor/sidenav/doctor-dashboard");
+        } else if (userRole === "nurse") {
+          router.replace("/nurses/nurses-dashboard");
+        } else {
+          router.replace("/(tabs)/dashboard");
+        }
+      } else {
+        let errorMessage = "Login failed. Please try again.";
+        if (data && data.error) {
+          errorMessage = data.error;
+        }
+        Alert.alert("Login Error", errorMessage);
+        console.error("Login failed:", data);
+      }
+    } catch (error) {
+      console.error("Network error during login:", error);
+      Alert.alert(
+        "Error",
+        "Could not connect to the server. Please check your network connection."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -113,7 +174,7 @@ export default function LoginScreen() {
           disabled={loading}
         >
           <Text style={styles.loginButtonText}>
-            {loading ? "Logging in..." : "Sign up"}
+            {loading ? "Logging in..." : "Login"}
           </Text>
         </TouchableOpacity>
 

@@ -41,8 +41,7 @@ class UserRegistrationView(APIView):
 
             profile_data = {
                 'email': data['email'],
-                'first_name': data.get('first_name', ''),
-                'last_name': data.get('last_name', ''),
+                'full_name': data.get('full_name', ''),
                 'role': data.get('role', 'patient'),
                 'phone_number': data.get('phone_number', ''),
                 'date_of_birth': data.get('date_of_birth', '').isoformat() if data.get('date_of_birth') else '', # Convert date to string

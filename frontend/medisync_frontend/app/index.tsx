@@ -4,6 +4,7 @@ import { Image, Text, StyleSheet, Animated, Dimensions } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 export default function Index() {

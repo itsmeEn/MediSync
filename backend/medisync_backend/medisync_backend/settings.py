@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-qc*2thhf$u1=5mtdcb@%v^33a95@mz0w9h$w^s93rmtv_n*i$d
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["http://localhost:8081", "http://localhost:3000",] # Medisync frontend URL for webpack Dev Server
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "http://localhost:8081", "http://localhost:3000",] # Medisync frontend URL for webpack Dev Server
 
 
 # Application definition
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework.authtoken",
     "corsheaders",
     "rest_framework_simplejwt",
     "users",  # Custom app for user management
@@ -46,9 +47,9 @@ INSTALLED_APPS = [
     "crispy_forms",  # For crispy forms
     "crispy_tailwind",  # For crispy forms with Tailwind CSS
     "operations",
-    "analytics",
+    #"analytics",
     "communications",
-    "ai_insights",
+    #"ai_insights",
     
 ]
 
@@ -95,6 +96,17 @@ DATABASES = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     }
+}
+
+# Firebase Configuration for Authentication and Realtime Database
+FIREBASE_CONFIG = {
+    "apiKey": "your-api-key",
+    "authDomain": "medisync-8d3dc.firebaseapp.com",
+    "databaseURL": "https://medisync-8d3dc-default-rtdb.firebaseio.com",
+    "projectId": "medisync-8d3dc",
+    "storageBucket": "medisync-8d3dc.appspot.com",
+    "messagingSenderId": "your-sender-id",
+    "appId": "your-app-id"
 }
 
 

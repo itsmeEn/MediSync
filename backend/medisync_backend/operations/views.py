@@ -34,6 +34,63 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         appointment.status = 'cancelled'
         appointment.save()
         return Response({'status': 'appointment cancelled'})
+    
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        """Get recent appointments for the authenticated user"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Get appointments from the last 7 days
+        end_date = timezone.now().date()
+        start_date = end_date - timedelta(days=7)
+        
+        user = self.request.user
+        if user.role == 'patient':
+            appointments = Appointment.objects.filter(
+                patient__user=user,
+                appointment_date__gte=start_date,
+                appointment_date__lte=end_date
+            ).order_by('-appointment_date', '-appointment_time')[:10]
+        elif user.role == 'doctor':
+            appointments = Appointment.objects.filter(
+                doctor__user=user,
+                appointment_date__gte=start_date,
+                appointment_date__lte=end_date
+            ).order_by('-appointment_date', '-appointment_time')[:10]
+        else:
+            appointments = Appointment.objects.filter(
+                appointment_date__gte=start_date,
+                appointment_date__lte=end_date
+            ).order_by('-appointment_date', '-appointment_time')[:10]
+        
+        serializer = self.get_serializer(appointments, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def today(self, request):
+        """Get today's appointments count for the authenticated user"""
+        from django.utils import timezone
+        
+        today = timezone.now().date()
+        
+        user = self.request.user
+        if user.role == 'patient':
+            count = Appointment.objects.filter(
+                patient__user=user,
+                appointment_date=today
+            ).count()
+        elif user.role == 'doctor':
+            count = Appointment.objects.filter(
+                doctor__user=user,
+                appointment_date=today
+            ).count()
+        else:
+            count = Appointment.objects.filter(
+                appointment_date=today
+            ).count()
+        
+        return Response({'count': count})
 
 class QueueManagementViewSet(viewsets.ModelViewSet):
     queryset = QueueManagement.objects.all()
@@ -65,6 +122,23 @@ class QueueManagementViewSet(viewsets.ModelViewSet):
         queue_entry.ended_at = timezone.now()
         queue_entry.save()
         return Response({'status': 'service completed'})
+    
+    @action(detail=False, methods=['get'])
+    def total(self, request):
+        """Get total number of patients in queue"""
+        from users.models import PatientProfile
+        
+        user = self.request.user
+        if user.role == 'doctor':
+            # Count patients assigned to this doctor
+            count = PatientProfile.objects.filter(
+                appointments__doctor__user=user
+            ).distinct().count()
+        else:
+            # Count all patients
+            count = PatientProfile.objects.count()
+        
+        return Response({'count': count})
 
 class ClinicInventoryViewSet(viewsets.ModelViewSet):
     queryset = ClinicInventory.objects.all()

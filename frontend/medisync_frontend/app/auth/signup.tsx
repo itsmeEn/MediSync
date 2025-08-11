@@ -47,6 +47,9 @@ function SignupScreen() {
     agree: false,
   };
 
+  // State to hold loaded form data
+  const [loadedFormData, setLoadedFormData] = useState(initialValues);
+
   // Load saved form data when component mounts
   useEffect(() => {
     loadFormData();
@@ -57,15 +60,18 @@ function SignupScreen() {
       const savedData = await AsyncStorage.getItem('signupFormData');
       if (savedData) {
         const parsedData = JSON.parse(savedData);
-        // Restore form data if it exists
+        // Restore form data if it exists and is not expired
         if (parsedData.timestamp && Date.now() - parsedData.timestamp < 300000) { // 5 minutes
-          return parsedData.formData;
+          console.log('Loading saved form data:', parsedData.formData);
+          setLoadedFormData(parsedData.formData);
+          return;
         }
       }
     } catch (error) {
       console.error('Error loading form data:', error);
     }
-    return initialValues;
+    console.log('No saved data found, using initial values');
+    setLoadedFormData(initialValues);
   };
 
   const saveFormData = async (formData: any) => {
@@ -105,6 +111,8 @@ function SignupScreen() {
   // --- Form Submission Handler ---
   const handleSubmit = async (values: any, { setSubmitting }: any) => {
     setLoading(true);
+    
+    console.log("Form values:", values); // Debug log
 
     // Basic frontend validation
     if (
@@ -115,6 +123,14 @@ function SignupScreen() {
       !values.gender ||
       !values.date_of_birth
     ) {
+      console.log("Validation failed - missing fields:", {
+        email: !values.email,
+        full_name: !values.full_name,
+        password: !values.password,
+        password2: !values.password2,
+        gender: !values.gender,
+        date_of_birth: !values.date_of_birth
+      });
       Alert.alert(
         "Error",
         "Please fill in all required fields: Email, Full Name, Password, Gender, and Date of Birth."
@@ -162,9 +178,35 @@ function SignupScreen() {
       const data = await response.json();
 
       if (response.ok) {
+        // Clear saved form data on successful registration
+        await clearFormData();
+        
+        // Save user data for profile display
+        try {
+          const userDataToSave = {
+            full_name: values.full_name,
+            role: payload.role,
+            email: values.email,
+            phone_number: values.phone_number,
+            date_of_birth: values.date_of_birth,
+            gender: values.gender,
+            address: values.address,
+          };
+          await AsyncStorage.setItem('userData', JSON.stringify(userDataToSave));
+          console.log('User data saved:', userDataToSave);
+        } catch (error) {
+          console.error('Error saving user data:', error);
+        }
+        
         Alert.alert("Success", "Registration successful! Please verify your account.");
         console.log("Registration data:", data);
-        router.replace("/auth/verification" as any);
+        console.log("Attempting to navigate to verification page...");
+        try {
+          router.replace("/auth/verification" as any);
+          console.log("Navigation command executed");
+        } catch (navError) {
+          console.error("Navigation error:", navError);
+        }
       } else {
         let errorMessage = "Registration failed. Please try again.";
         if (data && data.error) {
@@ -208,14 +250,23 @@ function SignupScreen() {
         </ImageBackground>
       </View>
 
-      {/* Bottom Section - Form */}
+            {/* Bottom Section - Form */}
       <View style={styles.bottomSection}>
         <Formik
-          initialValues={initialValues}
+          initialValues={loadedFormData}
           onSubmit={handleSubmit}
-          enableReinitialize={true}
+          enableReinitialize={false}
         >
           {({ handleChange, handleBlur, values, setFieldValue }) => {
+            // Auto-save form data when values change (with debounce)
+            useEffect(() => {
+              const timeoutId = setTimeout(() => {
+                saveFormData(values);
+              }, 1000); // Save after 1 second of no changes
+              
+              return () => clearTimeout(timeoutId);
+            }, [values]);
+
             // Handle terms acceptance - only set once when terms are accepted
             if (termsAccepted === "true" && !hasSetAgree.current) {
               setFieldValue("agree", true);
@@ -231,7 +282,13 @@ function SignupScreen() {
               >
                 {/* Header */}
                 <View style={styles.header}>
-                  <TouchableOpacity style={styles.backButton} onPress={() => router.push('/auth/role-selection')}>
+                  <TouchableOpacity 
+                    style={styles.backButton} 
+                    onPress={async () => {
+                      await clearFormData();
+                      router.push('/auth/role-selection');
+                    }}
+                  >
                     <Feather name="arrow-left" size={24} color="#fff" />
                   </TouchableOpacity>
                   <Text style={styles.headerTitle}>Create Account</Text>

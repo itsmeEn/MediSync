@@ -8,6 +8,10 @@ djangorestframework_simplejwt==5.5.1
 PyJWT==2.10.1
 sqlparse==0.5.3
 
+# Firebase Integration
+firebase-admin==6.4.0
+django-firebase==0.0.7
+
 # AI/ML Libraries
 tensorflow==2.16.1
 langchain==0.1.0
